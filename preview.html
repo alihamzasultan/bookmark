@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Professional Bookmark Animation</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.12), transparent 28%),
+        radial-gradient(circle at 80% 10%, rgba(14, 165, 233, 0.12), transparent 28%),
+        linear-gradient(135deg, #f8fafc, #eef2ff);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .demo-panel {
+      display: grid;
+      justify-items: center;
+      gap: 18px;
+    }
+
+    .refresh-button {
+      padding: 11px 16px;
+      border: 1px solid rgba(199, 210, 254, 0.95);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.88);
+      color: #312e81;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+      transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+    }
+
+    .refresh-button:hover {
+      transform: translateY(-2px);
+      border-color: #a5b4fc;
+      box-shadow: 0 18px 38px rgba(15, 23, 42, 0.11);
+    }
+
+    .refresh-button:active {
+      transform: translateY(0);
+    }
+
+    .bookmark-button {
+      position: relative;
+      isolation: isolate;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(226, 232, 240, 0.95);
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.1);
+      cursor: pointer;
+      user-select: none;
+      overflow: hidden;
+      backdrop-filter: blur(14px);
+      transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+    }
+
+    .bookmark-button:hover {
+      transform: translateY(-2px);
+      border-color: #c7d2fe;
+      box-shadow: 0 24px 56px rgba(15, 23, 42, 0.13);
+    }
+
+    .bookmark-button:active {
+      transform: translateY(0);
+    }
+
+    .bookmark-button input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .icon-wrap {
+      position: relative;
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+    }
+
+    .bookmark-icon {
+      position: relative;
+      z-index: 3;
+      width: 22px;
+      height: 30px;
+      display: block;
+      overflow: visible;
+    }
+
+    .bookmark-shape {
+      fill: #ffffff;
+      stroke: #475569;
+      stroke-width: 2.25;
+      stroke-linejoin: round;
+      transition: fill 220ms ease, stroke 220ms ease;
+    }
+
+    .ring {
+      position: absolute;
+      z-index: 1;
+      width: 34px;
+      height: 34px;
+      border: 2px solid rgba(79, 70, 229, 0.24);
+      border-radius: 50%;
+      opacity: 0;
+      transform: scale(0.72);
+      pointer-events: none;
+    }
+
+    .particle {
+      position: absolute;
+      z-index: 2;
+      left: 50%;
+      top: 50%;
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: #4f46e5;
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.2);
+      pointer-events: none;
+    }
+
+    .particle:nth-of-type(2) { --x: -34px; --y: -24px; width: 5px; height: 5px; background: #6366f1; }
+    .particle:nth-of-type(3) { --x: 4px; --y: -40px; width: 4px; height: 4px; background: #0ea5e9; }
+    .particle:nth-of-type(4) { --x: 34px; --y: -22px; width: 5px; height: 5px; background: #818cf8; }
+    .particle:nth-of-type(5) { --x: 39px; --y: 7px; width: 4px; height: 4px; background: #38bdf8; }
+    .particle:nth-of-type(6) { --x: 23px; --y: 34px; width: 6px; height: 6px; background: #6366f1; }
+    .particle:nth-of-type(7) { --x: -20px; --y: 36px; width: 4px; height: 4px; background: #0ea5e9; }
+    .particle:nth-of-type(8) { --x: -40px; --y: 8px; width: 5px; height: 5px; background: #818cf8; }
+    .particle:nth-of-type(9) { --x: -18px; --y: -38px; width: 3px; height: 3px; background: #38bdf8; }
+
+    .label-text {
+      position: relative;
+      z-index: 3;
+      color: #334155;
+      font-size: 15px;
+      font-weight: 650;
+      letter-spacing: -0.01em;
+      transition: color 220ms ease;
+    }
+
+    .bookmark-button input:checked + .icon-wrap .bookmark-shape {
+      fill: #4f46e5;
+      stroke: #4f46e5;
+    }
+
+    .bookmark-button.is-animating .bookmark-icon {
+      animation: markOnce 520ms cubic-bezier(.22, 1, .36, 1) both;
+    }
+
+    .bookmark-button.is-animating .ring {
+      animation: rippleOnce 620ms ease-out both;
+    }
+
+    .bookmark-button.is-animating .particle {
+      animation: particleBurst 760ms cubic-bezier(.18, .9, .22, 1) both;
+    }
+
+    .bookmark-button.is-animating .particle:nth-of-type(2) { animation-delay: 20ms; }
+    .bookmark-button.is-animating .particle:nth-of-type(3) { animation-delay: 45ms; }
+    .bookmark-button.is-animating .particle:nth-of-type(4) { animation-delay: 70ms; }
+    .bookmark-button.is-animating .particle:nth-of-type(5) { animation-delay: 95ms; }
+    .bookmark-button.is-animating .particle:nth-of-type(6) { animation-delay: 120ms; }
+    .bookmark-button.is-animating .particle:nth-of-type(7) { animation-delay: 145ms; }
+    .bookmark-button.is-animating .particle:nth-of-type(8) { animation-delay: 170ms; }
+    .bookmark-button.is-animating .particle:nth-of-type(9) { animation-delay: 195ms; }
+
+    .bookmark-button input:checked ~ .label-text {
+      color: #312e81;
+    }
+
+    .bookmark-button input:focus-visible + .icon-wrap {
+      outline: 3px solid rgba(79, 70, 229, 0.2);
+      outline-offset: 6px;
+      border-radius: 12px;
+    }
+
+    @keyframes markOnce {
+      0% {
+        transform: scale(1) translateY(0);
+      }
+      38% {
+        transform: scale(1.16) translateY(-2px);
+      }
+      68% {
+        transform: scale(0.96) translateY(1px);
+      }
+      100% {
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    @keyframes rippleOnce {
+      0% {
+        opacity: 0.75;
+        transform: scale(0.72);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(1.7);
+      }
+    }
+
+    @keyframes particleBurst {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.2);
+      }
+      35% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(1);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="demo-panel">
+    <label class="bookmark-button" aria-label="Save bookmark">
+      <!-- Checkbox allows both marking and unmarking. State is restored from localStorage without replaying animation. -->
+      <input id="bookmarkToggle" type="checkbox" />
+
+      <span class="icon-wrap" aria-hidden="true">
+        <span class="ring"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+
+        <svg class="bookmark-icon" viewBox="0 0 24 32" role="img">
+          <path class="bookmark-shape" d="M5 3.5C5 2.67 5.67 2 6.5 2h11C18.33 2 19 2.67 19 3.5v24.2c0 .74-.82 1.18-1.43.77L12 24.72l-5.57 3.75C5.82 28.88 5 28.44 5 27.7V3.5Z" />
+        </svg>
+      </span>
+
+      <span class="label-text">Save item</span>
+    </label>
+
+    <button class="refresh-button" type="button" id="refreshButton">Refresh page</button>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "bookmark-filled-state";
+    const bookmarkButton = document.querySelector(".bookmark-button");
+    const bookmarkToggle = document.querySelector("#bookmarkToggle");
+    const labelText = document.querySelector(".label-text");
+    const refreshButton = document.querySelector("#refreshButton");
+
+    // Variable requested: stores the current fill / unfill state.
+    let isBookmarkFilled = localStorage.getItem(STORAGE_KEY) === "filled";
+
+    function updateBookmarkUI() {
+      bookmarkToggle.checked = isBookmarkFilled;
+      labelText.textContent = isBookmarkFilled ? "Saved item" : "Save item";
+    }
+
+    function saveBookmarkState() {
+      localStorage.setItem(STORAGE_KEY, isBookmarkFilled ? "filled" : "unfilled");
+    }
+
+    function playFillAnimation() {
+      bookmarkButton.classList.remove("is-animating");
+
+      // Restart the one-shot animation whenever the user fills after unfilling.
+      void bookmarkButton.offsetWidth;
+      bookmarkButton.classList.add("is-animating");
+
+      window.setTimeout(() => {
+        bookmarkButton.classList.remove("is-animating");
+      }, 900);
+    }
+
+    // Initial restore: filled state appears immediately, but no animation plays on page refresh.
+    updateBookmarkUI();
+
+    bookmarkToggle.addEventListener("change", () => {
+      const wasBookmarkFilled = isBookmarkFilled;
+      isBookmarkFilled = bookmarkToggle.checked;
+
+      updateBookmarkUI();
+      saveBookmarkState();
+
+      if (!wasBookmarkFilled && isBookmarkFilled) {
+        playFillAnimation();
+      }
+    });
+
+    refreshButton.addEventListener("click", () => {
+      window.location.reload();
+    });
+  </script>
+</body>
+</html>
